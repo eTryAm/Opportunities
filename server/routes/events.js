@@ -1,0 +1,2 @@
+import { createCrudRouter } from '../utils/createCrudRouter.js'; import { ROLES } from '../middleware/auth.js';
+export default createCrudRouter({ table:'events', label:'event', roles:ROLES.OPPORTUNITIES, fields:['slug','title','category','description','location','event_date','is_online','application_url','is_published','is_featured'], required:['title','description'], boolFields:['is_online','is_published','is_featured'], urlFields:['application_url'], slugField:'slug', defaultSort:'event_date ASC, created_at DESC' });

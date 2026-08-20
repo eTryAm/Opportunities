@@ -1,0 +1,2 @@
+import { createCrudRouter } from '../utils/createCrudRouter.js'; import { ROLES } from '../middleware/auth.js';
+export default createCrudRouter({ table:'testimonials', label:'testimonial', roles:ROLES.CONTENT, fields:['name','role','organization','photo_url','content','is_published','sort_order'], required:['name','content'], boolFields:['is_published'], urlFields:['photo_url'], defaultSort:'sort_order ASC, created_at DESC' });
