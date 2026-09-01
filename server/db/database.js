@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import config from '../config.js';
 import { seedDatabase } from './seed.js';
+import { hashPassword } from '../utils/password.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -120,6 +121,22 @@ export async function initDatabase() {
     const adminCheck = await db.get('SELECT COUNT(*) as count FROM admins');
     if (!adminCheck || adminCheck.count === 0) {
       await seedDatabase(db);
+    } else if (config.adminEmail && config.adminPassword) {
+      const email = config.adminEmail.toLowerCase();
+      const existing = await db.get('SELECT id FROM admins WHERE email = ?', [email]);
+      const passwordHash = await hashPassword(config.adminPassword);
+      if (!existing) {
+        await db.run(`
+          INSERT INTO admins (email, password_hash, name, role, is_active)
+          VALUES (?, ?, 'Super Admin', 'SUPER_ADMIN', 1)
+        `, [email, passwordHash]);
+        console.log(`Created admin account from environment: ${email}`);
+      } else {
+        await db.run(`
+          UPDATE admins SET password_hash = ?, is_active = 1, locked_until = NULL, failed_attempts = 0 WHERE id = ?
+        `, [passwordHash, existing.id]);
+        console.log(`Synchronized admin password from environment: ${email}`);
+      }
     }
 
     console.log(`Database connected successfully (${isTurso ? 'Turso' : 'Local SQLite'}).`);
