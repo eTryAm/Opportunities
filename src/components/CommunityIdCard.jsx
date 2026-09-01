@@ -1,79 +1,29 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
+import { LOGO_BASE64 } from '../assets/logoBase64';
 
 export function CommunityIdCard({ member }) {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
-  const [logoDataUrl, setLogoDataUrl] = useState('');
-  const [cachedPhotoUrl, setCachedPhotoUrl] = useState('');
 
   // Calculate resolved photo URL
-  const resolvedPhotoSrc = member.photo_url
+  const photoSrc = member.photo_url
     ? (member.photo_url.startsWith('http://') || member.photo_url.startsWith('https://') || member.photo_url.startsWith('data:'))
       ? member.photo_url
       : `${import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '') : ''}${member.photo_url}`
     : null;
-
-  // Pre-load logo and convert to Base64 DataURL for 100% reliable canvas export
-  useEffect(() => {
-    let isMounted = true;
-    
-    // Convert static logo to DataURL
-    const fetchLogo = async () => {
-      try {
-        const res = await fetch('/logo.jpg');
-        const blob = await res.blob();
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          if (isMounted && reader.result) {
-            setLogoDataUrl(reader.result);
-          }
-        };
-        reader.readAsDataURL(blob);
-      } catch (e) {
-        if (isMounted) setLogoDataUrl('/logo.jpg');
-      }
-    };
-
-    // Pre-cache member photo if available
-    const fetchPhoto = async () => {
-      if (!resolvedPhotoSrc) return;
-      try {
-        const res = await fetch(resolvedPhotoSrc, { mode: 'cors' });
-        if (res.ok) {
-          const blob = await res.blob();
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            if (isMounted && reader.result) {
-              setCachedPhotoUrl(reader.result);
-            }
-          };
-          reader.readAsDataURL(blob);
-        } else {
-          if (isMounted) setCachedPhotoUrl(resolvedPhotoSrc);
-        }
-      } catch (e) {
-        if (isMounted) setCachedPhotoUrl(resolvedPhotoSrc);
-      }
-    };
-
-    fetchLogo();
-    fetchPhoto();
-
-    return () => { isMounted = false; };
-  }, [resolvedPhotoSrc]);
 
   const handleDownload = async () => {
     if (!cardRef.current) return;
     try {
       setDownloading(true);
 
-      // Brief delay to ensure render tree has repainted
-      await new Promise(r => setTimeout(r, 100));
+      // Give 50ms for any pending paints
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       const canvas = await html2canvas(cardRef.current, {
-        scale: 3, // High-DPI crisp export
-        backgroundColor: null,
+        scale: 3, // Crisp high-definition output
+        backgroundColor: '#141922',
         useCORS: true,
         allowTaint: true,
         logging: false,
@@ -91,8 +41,6 @@ export function CommunityIdCard({ member }) {
     }
   };
 
-  const finalPhotoSrc = cachedPhotoUrl || resolvedPhotoSrc;
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', width: '100%' }}>
       {/* Card Container */}
@@ -100,82 +48,82 @@ export function CommunityIdCard({ member }) {
         ref={cardRef}
         style={{
           width: '350px',
-          minHeight: '540px',
+          minHeight: '530px',
           borderRadius: '18px',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
           boxShadow: '0 12px 36px 0 rgba(0, 0, 0, 0.45)',
           overflow: 'hidden',
           position: 'relative',
           display: 'flex',
           flexDirection: 'column',
           fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
-          backgroundColor: '#161b22',
+          background: 'radial-gradient(circle at 85% 15%, rgba(2, 132, 199, 0.22) 0%, transparent 55%), radial-gradient(circle at 15% 85%, rgba(234, 88, 12, 0.18) 0%, transparent 55%), #141922',
         }}
       >
-        {/* Decorative ambient gradients */}
-        <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '170px', height: '170px', background: '#38bdf8', borderRadius: '50%', filter: 'blur(55px)', opacity: 0.45 }}></div>
-        <div style={{ position: 'absolute', bottom: '-40px', left: '-40px', width: '200px', height: '200px', background: '#34d399', borderRadius: '50%', filter: 'blur(60px)', opacity: 0.35 }}></div>
-
         {/* Header with Logo + Organization Typography */}
-        <div style={{ padding: '22px 20px 14px', textAlign: 'center', zIndex: 1, borderBottom: '1px solid rgba(255,255,255,0.12)' }}>
+        <div style={{ padding: '24px 20px 16px', textAlign: 'center', zIndex: 1, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          {/* Logo Frame */}
           <div style={{ 
             backgroundColor: '#ffffff', 
-            borderRadius: '10px', 
-            padding: '7px 14px', 
+            borderRadius: '12px', 
+            padding: '6px', 
             display: 'inline-flex', 
             alignItems: 'center', 
             justifyContent: 'center', 
-            boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
             marginBottom: '10px' 
           }}>
             <img 
-              src={logoDataUrl || '/logo.jpg'} 
+              src={LOGO_BASE64} 
               alt="Youth Empowerment Hub Logo" 
-              style={{ height: '54px', width: 'auto', maxWidth: '170px', objectFit: 'contain', display: 'block' }} 
-              crossOrigin="anonymous" 
+              style={{ width: '68px', height: '68px', objectFit: 'contain', display: 'block' }} 
             />
           </div>
-          <div style={{ margin: '2px 0 0', fontSize: '0.72rem', color: '#94a3b8', letterSpacing: '2.5px', textTransform: 'uppercase', fontWeight: 700 }}>
+
+          <div style={{ margin: '2px 0 0', fontSize: '0.7rem', color: '#94a3b8', letterSpacing: '2.5px', textTransform: 'uppercase', fontWeight: 700 }}>
             Official ID Card
           </div>
+
+          {/* Organization Name matching logo color scheme (Youth = Blue, Empowerment Hub = Orange) */}
           <div style={{ 
-            margin: '4px 0 0', 
-            fontSize: '1.05rem', 
+            margin: '6px 0 0', 
+            fontSize: '1.22rem', 
             fontWeight: 800, 
             letterSpacing: '-0.02em', 
-            background: 'linear-gradient(135deg, #38bdf8 0%, #34d399 100%)', 
-            WebkitBackgroundClip: 'text', 
-            WebkitTextFillColor: 'transparent',
-            color: '#38bdf8' 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            gap: '6px' 
           }}>
-            Youth Empowerment Hub
+            <span style={{ color: '#0284c7' }}>Youth</span>
+            <span style={{ color: '#ea580c' }}>Empowerment Hub</span>
           </div>
         </div>
 
         {/* Photo + Name Section */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 1, padding: '20px' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 1, padding: '22px 20px' }}>
           <div style={{ 
-            width: '135px', 
-            height: '135px', 
+            width: '130px', 
+            height: '130px', 
             borderRadius: '14px', 
             padding: '3px',
-            background: 'linear-gradient(135deg, #38bdf8, #34d399)',
+            background: 'linear-gradient(135deg, #0284c7, #ea580c)',
             marginBottom: '16px',
-            boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.55)'
+            boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.5)'
           }}>
             <div style={{ 
               width: '100%', 
               height: '100%', 
               borderRadius: '11px',
-              backgroundColor: '#21262d',
+              backgroundColor: '#1f2530',
               overflow: 'hidden',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              {finalPhotoSrc ? (
+              {photoSrc ? (
                 <img 
-                  src={finalPhotoSrc} 
+                  src={photoSrc} 
                   alt={member.name} 
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} 
                   crossOrigin="anonymous" 
@@ -194,11 +142,11 @@ export function CommunityIdCard({ member }) {
           <span style={{ 
             display: 'inline-block', 
             padding: '4px 14px', 
-            background: 'rgba(56, 189, 248, 0.16)', 
-            border: '1px solid rgba(56, 189, 248, 0.45)', 
+            background: 'rgba(2, 132, 199, 0.16)', 
+            border: '1px solid rgba(2, 132, 199, 0.45)', 
             borderRadius: '20px', 
             color: '#7dd3fc', 
-            fontSize: '0.75rem', 
+            fontSize: '0.74rem', 
             fontWeight: 700, 
             letterSpacing: '0.6px' 
           }}>
@@ -207,7 +155,7 @@ export function CommunityIdCard({ member }) {
         </div>
 
         {/* Footer Details */}
-        <div style={{ padding: '18px 22px', background: 'rgba(10, 14, 20, 0.75)', zIndex: 1, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+        <div style={{ padding: '16px 22px', background: 'rgba(10, 14, 20, 0.8)', zIndex: 1, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '14px' }}>
             <div>
               <div style={{ margin: 0, fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
@@ -229,7 +177,12 @@ export function CommunityIdCard({ member }) {
         </div>
       </div>
 
-      <button onClick={handleDownload} disabled={downloading} className="button button-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px', minHeight: '44px' }}>
+      <button 
+        onClick={handleDownload} 
+        disabled={downloading} 
+        className="button button-primary" 
+        style={{ display: 'flex', alignItems: 'center', gap: '8px', minHeight: '44px' }}
+      >
         {downloading ? 'Exporting ID Card...' : (
           <>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
