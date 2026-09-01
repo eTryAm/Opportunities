@@ -32,37 +32,36 @@ export function createSession(admin, remember = false) {
   return { token, expiresAt, expiresIn };
 }
 
-export function storeSession(adminId, token, ip, userAgent, expiresAt) {
+export async function storeSession(adminId, token, ip, userAgent, expiresAt) {
   const db = getDb();
-  db.prepare(`
+  await db.run(`
     INSERT INTO admin_sessions (admin_id, token_hash, ip, user_agent, expires_at)
     VALUES (?, ?, ?, ?, ?)
-  `).run(adminId, hashToken(token), ip, userAgent, expiresAt);
+  `, [adminId, hashToken(token), ip, userAgent, expiresAt]);
 }
 
-export function revokeSession(token) {
+export async function revokeSession(token) {
   const db = getDb();
-  db.prepare('DELETE FROM admin_sessions WHERE token_hash = ?').run(hashToken(token));
+  await db.run('DELETE FROM admin_sessions WHERE token_hash = ?', [hashToken(token)]);
 }
 
-export function revokeAllSessions(adminId, exceptToken = null) {
+export async function revokeAllSessions(adminId, exceptToken = null) {
   const db = getDb();
   if (exceptToken) {
-    db.prepare('DELETE FROM admin_sessions WHERE admin_id = ? AND token_hash != ?')
-      .run(adminId, hashToken(exceptToken));
+    await db.run('DELETE FROM admin_sessions WHERE admin_id = ? AND token_hash != ?', [adminId, hashToken(exceptToken)]);
   } else {
-    db.prepare('DELETE FROM admin_sessions WHERE admin_id = ?').run(adminId);
+    await db.run('DELETE FROM admin_sessions WHERE admin_id = ?', [adminId]);
   }
 }
 
-export function cleanupExpiredSessions() {
+export async function cleanupExpiredSessions() {
   const db = getDb();
-  db.prepare("DELETE FROM admin_sessions WHERE julianday(expires_at) < julianday('now')").run();
+  await db.run("DELETE FROM admin_sessions WHERE expires_at < datetime('now')");
 }
 
-export function authenticate(req, res, next) {
+export async function authenticate(req, res, next) {
   try {
-    cleanupExpiredSessions();
+    await cleanupExpiredSessions().catch(() => {});
     const token = extractToken(req);
     if (!token) {
       return res.status(401).json({ error: 'Authentication required.' });
@@ -75,12 +74,12 @@ export function authenticate(req, res, next) {
     }
 
     const db = getDb();
-    const session = db.prepare(`
+    const session = await db.get(`
       SELECT s.id AS session_id, s.token_hash, s.expires_at, a.id AS admin_id, a.email, a.name, a.role, a.is_active
       FROM admin_sessions s
       JOIN admins a ON a.id = s.admin_id
       WHERE s.token_hash = ? AND s.expires_at > datetime('now')
-    `).get(hashToken(token));
+    `, [hashToken(token)]);
 
     if (!session) {
       return res.status(401).json({ error: 'Session expired or revoked.' });
@@ -103,13 +102,13 @@ export function authenticate(req, res, next) {
   }
 }
 
-export function optionalAuth(req, res, next) {
+export async function optionalAuth(req, res, next) {
   const token = extractToken(req);
   if (!token) return next();
 
   try {
     jwt.verify(token, config.jwtSecret);
-    return authenticate(req, res, next);
+    return await authenticate(req, res, next);
   } catch {
     return next();
   }

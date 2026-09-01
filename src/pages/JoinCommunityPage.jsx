@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { CommunityIdCard } from '../components/CommunityIdCard';
 import { Link } from 'react-router-dom';
+import { API_BASE } from '../services/publicApi';
 
 function useDocumentTitle(title) {
   const org = 'Youth Empowerment Hub';
@@ -38,7 +39,7 @@ export function JoinCommunityPage() {
     }
 
     try {
-      const res = await fetch('/api/public/community/join', {
+      const res = await fetch(`${API_BASE}/community/join`, {
         method: 'POST',
         body: formData,
       });
@@ -61,7 +62,7 @@ export function JoinCommunityPage() {
     setError('');
 
     try {
-      const res = await fetch(`/api/public/community/member/${loginId.trim()}`);
+      const res = await fetch(`${API_BASE}/community/member/${encodeURIComponent(loginId.trim())}`);
       const data = await res.json();
       
       if (!res.ok) throw new Error(data.error || 'Failed to fetch member details');

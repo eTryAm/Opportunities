@@ -27,6 +27,12 @@ export function CommunityIdCard({ member }) {
     }
   };
 
+  const photoSrc = member.photo_url
+    ? (member.photo_url.startsWith('http://') || member.photo_url.startsWith('https://') || member.photo_url.startsWith('data:'))
+      ? member.photo_url
+      : `${import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '') : ''}${member.photo_url}`
+    : null;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', width: '100%' }}>
       {/* Card Container */}
@@ -79,8 +85,8 @@ export function CommunityIdCard({ member }) {
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              {member.photo_url ? (
-                <img src={member.photo_url} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" />
+              {photoSrc ? (
+                <img src={photoSrc} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" />
               ) : (
                 <span style={{ fontSize: '3rem', color: '#64748b' }}>{member.name.charAt(0).toUpperCase()}</span>
               )}

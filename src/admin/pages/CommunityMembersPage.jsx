@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-
-const API_BASE = '/api/admin';
+import { API_BASE, getToken } from '../services/adminApi';
 
 async function request(endpoint, options = {}) {
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+  const token = getToken();
   const headers = { ...options.headers };
   if (token) headers.Authorization = `Bearer ${token}`;
   if (options.body && typeof options.body !== 'string') {
@@ -216,7 +215,11 @@ export function CommunityMembersPage() {
                   <td style={tdStyle}>
                     {m.photo_url ? (
                       <img
-                        src={m.photo_url}
+                        src={
+                          m.photo_url.startsWith('http://') || m.photo_url.startsWith('https://') || m.photo_url.startsWith('data:')
+                            ? m.photo_url
+                            : `${import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '') : ''}${m.photo_url}`
+                        }
                         alt={m.name}
                         style={{
                           width: '32px',

@@ -1,6 +1,7 @@
 import { formLinkDefaults } from '../config/applicationLinks';
 
-const API_BASE = import.meta.env.VITE_PUBLIC_API_URL || '/api/public';
+const ROOT_BASE = import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '') : '';
+export const API_BASE = import.meta.env.VITE_PUBLIC_API_URL || `${ROOT_BASE}/api/public`;
 
 export const fallbackHome = {
   settings: {

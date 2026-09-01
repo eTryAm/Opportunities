@@ -6,7 +6,13 @@ import { useApplication } from '../hooks/useApplication';
 const navItems = [['Home', '/'], ['About', '/about'], ['Opportunities', '/opportunities'], ['Events', '/events'], ['Announcements', '/announcements'], ['Contact', '/contact']];
 
 function Wordmark({ name }) {
-  return <Link to="/" className="wordmark" aria-label={`${name} home`}><img src="/logo.jpg" alt={name} style={{height: '50px', objectFit: 'contain'}} /></Link>;
+  const brandName = name || 'Youth Empowerment Hub';
+  return (
+    <Link to="/" className="wordmark" aria-label={`${brandName} home`}>
+      <img src="/logo.jpg" alt={brandName} className="wordmark-logo" />
+      <span className="wordmark-text">{brandName}</span>
+    </Link>
+  );
 }
 
 function Navbar({ data }) {

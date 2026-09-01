@@ -1,6 +1,6 @@
 import { getDb } from '../db/database.js';
 
-export function logAudit({
+export async function logAudit({
   adminId = null,
   adminEmail = null,
   action,
@@ -10,20 +10,24 @@ export function logAudit({
   ip = null,
   userAgent = null,
 }) {
-  const db = getDb();
-  db.prepare(`
-    INSERT INTO audit_logs (admin_id, admin_email, action, resource_type, resource_id, metadata, ip, user_agent)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    adminId,
-    adminEmail,
-    action,
-    resourceType,
-    resourceId != null ? String(resourceId) : null,
-    metadata ? JSON.stringify(metadata) : null,
-    ip,
-    userAgent
-  );
+  try {
+    const db = getDb();
+    await db.run(`
+      INSERT INTO audit_logs (admin_id, admin_email, action, resource_type, resource_id, metadata, ip, user_agent)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      adminId,
+      adminEmail,
+      action,
+      resourceType,
+      resourceId != null ? String(resourceId) : null,
+      metadata ? JSON.stringify(metadata) : null,
+      ip,
+      userAgent
+    ]);
+  } catch (err) {
+    console.error('Audit log failure:', err);
+  }
 }
 
 export function getClientMeta(req) {

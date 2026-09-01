@@ -7,7 +7,7 @@ const router = Router();
 router.use(authenticate);
 
 // GET all community members with optional filters
-router.get('/', requireRole(ROLES.ALL_ADMINS), (req, res, next) => {
+router.get('/', requireRole(ROLES.ALL_ADMINS), async (req, res, next) => {
   try {
     const db = getDb();
     const { search, location, sort } = req.query;
@@ -17,12 +17,12 @@ router.get('/', requireRole(ROLES.ALL_ADMINS), (req, res, next) => {
     const params = [];
 
     if (search) {
-      conditions.push("(name LIKE ? OR member_id LIKE ? OR phone LIKE ?)");
+      conditions.push('(name LIKE ? OR member_id LIKE ? OR phone LIKE ?)');
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
     if (location) {
-      conditions.push("location LIKE ?");
+      conditions.push('location LIKE ?');
       params.push(`%${location}%`);
     }
 
@@ -38,7 +38,7 @@ router.get('/', requireRole(ROLES.ALL_ADMINS), (req, res, next) => {
       query += ' ORDER BY created_at DESC';
     }
 
-    const rows = db.prepare(query).all(...params);
+    const rows = await db.all(query, params);
     res.json(rows);
   } catch (err) {
     next(err);
@@ -46,10 +46,10 @@ router.get('/', requireRole(ROLES.ALL_ADMINS), (req, res, next) => {
 });
 
 // GET a single community member by id
-router.get('/:id', requireRole(ROLES.ALL_ADMINS), (req, res, next) => {
+router.get('/:id', requireRole(ROLES.ALL_ADMINS), async (req, res, next) => {
   try {
     const db = getDb();
-    const row = db.prepare('SELECT * FROM community_members WHERE id = ?').get(req.params.id);
+    const row = await db.get('SELECT * FROM community_members WHERE id = ?', [req.params.id]);
     if (!row) return res.status(404).json({ error: 'Member not found.' });
     res.json(row);
   } catch (err) {
@@ -58,13 +58,13 @@ router.get('/:id', requireRole(ROLES.ALL_ADMINS), (req, res, next) => {
 });
 
 // DELETE a community member
-router.delete('/:id', requireRole(ROLES.ALL_ADMINS), (req, res, next) => {
+router.delete('/:id', requireRole(ROLES.ALL_ADMINS), async (req, res, next) => {
   try {
     const db = getDb();
-    const existing = db.prepare('SELECT id, name FROM community_members WHERE id = ?').get(req.params.id);
+    const existing = await db.get('SELECT id, name FROM community_members WHERE id = ?', [req.params.id]);
     if (!existing) return res.status(404).json({ error: 'Member not found.' });
 
-    db.prepare('DELETE FROM community_members WHERE id = ?').run(req.params.id);
+    await db.run('DELETE FROM community_members WHERE id = ?', [req.params.id]);
     res.json({ message: `Member "${existing.name}" removed.` });
   } catch (err) {
     next(err);

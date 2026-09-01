@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import { applicationsApi } from '../services/adminApi';
+import { applicationsApi, API_BASE, getToken } from '../services/adminApi';
 import { DataTable } from '../components/DataTable';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-
-const API_BASE = '/api/admin';
 
 export function ApplicationsPage() {
   const [items, setItems] = useState([]);
@@ -107,9 +105,13 @@ export function ApplicationsPage() {
     setSyncMessage('');
 
     try {
+      const token = getToken();
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
       const response = await fetch(`${API_BASE}/applications/sync-sheet`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: JSON.stringify({ sheet_url: sheetUrl, default_role: defaultRole }),
       });

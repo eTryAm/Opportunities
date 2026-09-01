@@ -1,2 +1,21 @@
-import { Router } from 'express'; import { getDb } from '../db/database.js'; import { requireRole, ROLES } from '../middleware/auth.js';
-const router = Router(); router.use(requireRole(ROLES.SUPER_ADMIN)); router.get('/', (req,res,next) => { try { const limit=Math.min(Math.max(Number(req.query.limit)||50,1),100); const logs=getDb().prepare('SELECT id, admin_email, action, resource_type, resource_id, metadata, ip, created_at FROM audit_logs ORDER BY created_at DESC LIMIT ?').all(limit); res.json(logs); } catch(error){next(error);} }); export default router;
+import { Router } from 'express';
+import { getDb } from '../db/database.js';
+import { requireRole, ROLES } from '../middleware/auth.js';
+
+const router = Router();
+router.use(requireRole(ROLES.SUPER_ADMIN));
+
+router.get('/', async (req, res, next) => {
+  try {
+    const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 100);
+    const logs = await getDb().all(
+      'SELECT id, admin_email, action, resource_type, resource_id, metadata, ip, created_at FROM audit_logs ORDER BY created_at DESC LIMIT ?',
+      [limit]
+    );
+    res.json(logs);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export default router;

@@ -5,10 +5,10 @@ export async function seedDatabase(db) {
   const adminPassword = config.adminPassword;
   const passwordHash = await hashPassword(adminPassword);
 
-  db.prepare(`
+  await db.run(`
     INSERT INTO admins (email, password_hash, name, role, is_active)
     VALUES (?, ?, ?, 'SUPER_ADMIN', 1)
-  `).run(config.adminEmail, passwordHash, 'Super Admin');
+  `, [config.adminEmail, passwordHash, 'Super Admin']);
 
   console.log('\n========================================');
   console.log('  Youth Empowerment Hub — Database Seeded');
@@ -25,11 +25,10 @@ export async function seedDatabase(db) {
     { key: 'campus_ambassador', label: 'Campus Ambassador Application', url: '#' },
   ];
 
-  const insertFormLink = db.prepare(`
-    INSERT INTO form_links (key, label, url, enabled) VALUES (?, ?, ?, 1)
-  `);
   for (const link of formLinks) {
-    insertFormLink.run(link.key, link.label, link.url);
+    await db.run(`
+      INSERT INTO form_links (key, label, url, enabled) VALUES (?, ?, ?, 1)
+    `, [link.key, link.label, link.url]);
   }
 
   const settings = {
@@ -119,11 +118,10 @@ export async function seedDatabase(db) {
     theme_accent_color: '#3182ce',
   };
 
-  const insertSetting = db.prepare(`
-    INSERT INTO site_settings (key, value) VALUES (?, ?)
-  `);
   for (const [key, value] of Object.entries(settings)) {
-    insertSetting.run(key, JSON.stringify(value));
+    await db.run(`
+      INSERT INTO site_settings (key, value) VALUES (?, ?)
+    `, [key, JSON.stringify(value)]);
   }
 
   const opportunities = [
@@ -210,12 +208,11 @@ export async function seedDatabase(db) {
     },
   ];
 
-  const insertOpp = db.prepare(`
-    INSERT INTO opportunities (slug, title, description, benefits, responsibilities, eligibility, badge, application_status, is_published, is_featured, sort_order)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
-  `);
   for (const opp of opportunities) {
-    insertOpp.run(
+    await db.run(`
+      INSERT INTO opportunities (slug, title, description, benefits, responsibilities, eligibility, badge, application_status, is_published, is_featured, sort_order)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+    `, [
       opp.slug,
       opp.title,
       opp.description,
@@ -225,8 +222,8 @@ export async function seedDatabase(db) {
       opp.badge,
       opp.application_status,
       opp.slug === 'campus-ambassador' ? 1 : 0,
-      opp.sort_order
-    );
+      opp.sort_order,
+    ]);
   }
 
   const faqs = [
@@ -302,17 +299,16 @@ export async function seedDatabase(db) {
     },
   ];
 
-  const insertFaq = db.prepare(`
-    INSERT INTO faqs (question, answer, category, sort_order, is_published) VALUES (?, ?, ?, ?, 1)
-  `);
   for (const faq of faqs) {
-    insertFaq.run(faq.question, faq.answer, faq.category, faq.sort_order);
+    await db.run(`
+      INSERT INTO faqs (question, answer, category, sort_order, is_published) VALUES (?, ?, ?, ?, 1)
+    `, [faq.question, faq.answer, faq.category, faq.sort_order]);
   }
 
-  db.prepare(`
+  await db.run(`
     INSERT INTO campus_ambassador_settings (id, title, subtitle, description, benefits, responsibilities, eligibility, application_status, badge, cta_text, is_visible, is_premium)
     VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1)
-  `).run(
+  `, [
     'Campus Ambassador Program',
     'Lead Where You Learn.',
     'Become the face of Youth Empowerment Hub on your campus and help build a stronger student community around opportunities, learning and leadership.',
@@ -337,8 +333,8 @@ export async function seedDatabase(db) {
     'Enrolled students with leadership potential, campus engagement experience, and commitment to youth empowerment.',
     'Coming Soon',
     'Premium / Flagship Opportunity',
-    'Become a Campus Ambassador'
-  );
+    'Become a Campus Ambassador',
+  ]);
 
   const impactStats = [
     { key: 'members', label: 'Community Members', display_value: 'Growing', sort_order: 1 },
@@ -349,11 +345,10 @@ export async function seedDatabase(db) {
     { key: 'initiatives', label: 'Initiatives', display_value: 'Community-Led', sort_order: 6 },
   ];
 
-  const insertImpact = db.prepare(`
-    INSERT INTO impact_statistics (key, label, value, display_value, is_visible, sort_order) VALUES (?, ?, ?, ?, 1, ?)
-  `);
   for (const stat of impactStats) {
-    insertImpact.run(stat.key, stat.label, null, stat.display_value, stat.sort_order);
+    await db.run(`
+      INSERT INTO impact_statistics (key, label, value, display_value, is_visible, sort_order) VALUES (?, ?, ?, ?, 1, ?)
+    `, [stat.key, stat.label, null, stat.display_value, stat.sort_order]);
   }
 
   const socialLinks = [
@@ -363,10 +358,10 @@ export async function seedDatabase(db) {
     { platform: 'Email', url: 'mailto:contact@youthempowermenthub.org', sort_order: 4 },
   ];
 
-  const insertSocial = db.prepare(`
-    INSERT INTO social_links (platform, url, is_visible, sort_order) VALUES (?, ?, 0, ?)
-  `);
   for (const link of socialLinks) {
-    insertSocial.run(link.platform, link.url, link.sort_order);
+    await db.run(`
+      INSERT INTO social_links (platform, url, is_visible, sort_order) VALUES (?, ?, 0, ?)
+    `, [link.platform, link.url, link.sort_order]);
   }
 }
+

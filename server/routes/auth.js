@@ -23,7 +23,7 @@ router.post('/login', loginRateLimiter, loginValidation, async (req, res, next) 
     const db = getDb();
     const { ip, userAgent } = getClientMeta(req);
 
-    const admin = db.prepare('SELECT * FROM admins WHERE email = ?').get(email.toLowerCase());
+    const admin = await db.get('SELECT * FROM admins WHERE email = ?', [email.toLowerCase()]);
 
     if (!admin) {
       return res.status(401).json({ error: 'Invalid email or password.' });
@@ -49,11 +49,11 @@ router.post('/login', loginRateLimiter, loginValidation, async (req, res, next) 
         lockedUntil = new Date(Date.now() + config.lockoutMinutes * 60 * 1000).toISOString();
       }
 
-      db.prepare(`
+      await db.run(`
         UPDATE admins SET failed_attempts = ?, locked_until = ?, updated_at = datetime('now') WHERE id = ?
-      `).run(failedAttempts, lockedUntil, admin.id);
+      `, [failedAttempts, lockedUntil, admin.id]);
 
-      logAudit({
+      await logAudit({
         adminId: admin.id,
         adminEmail: admin.email,
         action: 'LOGIN_FAILED',
@@ -74,15 +74,15 @@ router.post('/login', loginRateLimiter, loginValidation, async (req, res, next) 
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
-    db.prepare(`
+    await db.run(`
       UPDATE admins SET failed_attempts = 0, locked_until = NULL, last_login = datetime('now'), updated_at = datetime('now') WHERE id = ?
-    `).run(admin.id);
+    `, [admin.id]);
 
     const { token, expiresAt } = createSession(admin, remember);
-    storeSession(admin.id, token, ip, userAgent, expiresAt);
+    await storeSession(admin.id, token, ip, userAgent, expiresAt);
     setAuthCookie(res, token, remember);
 
-    logAudit({
+    await logAudit({
       adminId: admin.id,
       adminEmail: admin.email,
       action: 'LOGIN',
@@ -108,13 +108,13 @@ router.post('/login', loginRateLimiter, loginValidation, async (req, res, next) 
   }
 });
 
-router.post('/logout', authenticate, (req, res, next) => {
+router.post('/logout', authenticate, async (req, res, next) => {
   try {
     const { ip, userAgent } = getClientMeta(req);
-    revokeSession(req.token);
+    await revokeSession(req.token);
     clearAuthCookie(res);
 
-    logAudit({
+    await logAudit({
       adminId: req.admin.id,
       adminEmail: req.admin.email,
       action: 'LOGOUT',
@@ -130,12 +130,12 @@ router.post('/logout', authenticate, (req, res, next) => {
   }
 });
 
-router.get('/me', authenticate, (req, res, next) => {
+router.get('/me', authenticate, async (req, res, next) => {
   try {
     const db = getDb();
-    const admin = db.prepare(`
+    const admin = await db.get(`
       SELECT id, email, name, role, is_active, last_login, created_at FROM admins WHERE id = ?
-    `).get(req.admin.id);
+    `, [req.admin.id]);
 
     if (!admin) {
       return res.status(404).json({ error: 'Admin not found.' });
@@ -156,7 +156,7 @@ router.post('/change-password', authenticate, changePasswordValidation, async (r
     const db = getDb();
     const { ip, userAgent } = getClientMeta(req);
 
-    const admin = db.prepare('SELECT * FROM admins WHERE id = ?').get(req.admin.id);
+    const admin = await db.get('SELECT * FROM admins WHERE id = ?', [req.admin.id]);
     const valid = await verifyPassword(currentPassword, admin.password_hash);
     if (!valid) {
       return res.status(400).json({ error: 'Current password is incorrect.' });
@@ -168,11 +168,11 @@ router.post('/change-password', authenticate, changePasswordValidation, async (r
     }
 
     const passwordHash = await hashPassword(newPassword);
-    db.prepare(`
+    await db.run(`
       UPDATE admins SET password_hash = ?, updated_at = datetime('now') WHERE id = ?
-    `).run(passwordHash, admin.id);
+    `, [passwordHash, admin.id]);
 
-    logAudit({
+    await logAudit({
       adminId: admin.id,
       adminEmail: admin.email,
       action: 'PASSWORD_CHANGED',
@@ -188,12 +188,12 @@ router.post('/change-password', authenticate, changePasswordValidation, async (r
   }
 });
 
-router.post('/revoke-sessions', authenticate, (req, res, next) => {
+router.post('/revoke-sessions', authenticate, async (req, res, next) => {
   try {
     const { ip, userAgent } = getClientMeta(req);
-    revokeAllSessions(req.admin.id, req.token);
+    await revokeAllSessions(req.admin.id, req.token);
 
-    logAudit({
+    await logAudit({
       adminId: req.admin.id,
       adminEmail: req.admin.email,
       action: 'SESSIONS_REVOKED',

@@ -1,4 +1,5 @@
-const API_BASE = import.meta.env.VITE_API_URL || '/api/admin';
+const ROOT_BASE = import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '') : '';
+export const API_BASE = import.meta.env.VITE_API_URL || `${ROOT_BASE}/api/admin`;
 
 const TOKEN_KEY = 'token';
 const REMEMBER_KEY = 'admin_remember';

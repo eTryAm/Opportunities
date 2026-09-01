@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { useApplication } from '../hooks/useApplication';
+import { API_BASE } from '../services/publicApi';
 
 const roleKeyBySlug = { community: 'community_member', volunteer: 'volunteer', 'district-representative': 'district_representative', 'state-representative': 'state_representative', 'campus-ambassador': 'campus_ambassador' };
 const iconByIndex = ['people', 'briefcase', 'compass', 'spark', 'graduation', 'shield'];
@@ -74,7 +75,7 @@ function TestimonialSubmissionModal({ isOpen, onClose }) {
     };
 
     try {
-      const response = await fetch('/api/public/testimonials', {
+      const response = await fetch(`${API_BASE}/testimonials`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)

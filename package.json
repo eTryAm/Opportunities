@@ -9,12 +9,16 @@
     "server": "node server/index.js",
     "dev:full": "concurrently \"npm run server\" \"npm run dev\"",
     "build": "vite build",
+    "db:migrate": "node scripts/migrate-to-turso.js",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.4",
+    "@vitejs/plugin-react": "^6.0.4",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.8.0",
+    "cloudinary": "^2.11.0",
     "concurrently": "^9.2.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -28,13 +32,12 @@
     "multer": "^2.2.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.2"
+    "react-router-dom": "^7.18.2",
+    "vite": "^8.2.0"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.4",
-    "oxlint": "^1.75.0",
-    "vite": "^8.2.0"
+    "oxlint": "^1.75.0"
   }
 }
