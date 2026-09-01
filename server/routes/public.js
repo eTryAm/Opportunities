@@ -322,8 +322,28 @@ router.post('/community/join', (req, res, next) => {
       const phone = (req.body.phone || '').trim();
       const location = (req.body.location || '').trim();
 
-      if (!name || !phone || !location) {
-        return res.status(400).json({ error: 'Name, phone, and location are required.' });
+      const db = getDb();
+
+      // Check if user with this contact number is already a registered member
+      const cleanPhone = phone.replace(/[\s\-\(\)\+]/g, '');
+      const existingMember = await db.get(
+        `SELECT * FROM community_members 
+         WHERE phone = ? 
+            OR REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+', ''), '(', '') LIKE ?`,
+        [phone, `%${cleanPhone.length >= 10 ? cleanPhone.slice(-10) : cleanPhone}%`]
+      );
+
+      if (existingMember) {
+        return res.status(200).json({
+          alreadyMember: true,
+          message: `You are already a registered member with Member ID: ${existingMember.member_id}`,
+          member_id: existingMember.member_id,
+          name: existingMember.name,
+          phone: existingMember.phone,
+          location: existingMember.location,
+          photo_url: existingMember.photo_url,
+          created_at: existingMember.created_at
+        });
       }
 
       let photoUrl = null;
@@ -335,8 +355,6 @@ router.post('/community/join', (req, res, next) => {
         );
         photoUrl = uploadResult.url;
       }
-
-      const db = getDb();
 
       let memberId;
       let found = false;
