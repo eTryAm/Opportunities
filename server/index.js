@@ -61,7 +61,17 @@ app.use(
 app.use(express.json({ limit: '100kb' }));
 app.use(cookieParser());
 
-// Health check endpoints for Render and uptime monitoring
+// Root greeting and health check endpoints
+app.get('/', (_req, res) => {
+  res.json({
+    message: 'Youth Empowerment Hub API is online and operational.',
+    health: '/health',
+    publicApi: '/api/public/home',
+    env: config.nodeEnv,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 app.get(['/health', '/api/health'], (_req, res) => {
   res.json({
     status: 'ok',
