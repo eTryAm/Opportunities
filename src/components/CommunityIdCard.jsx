@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { LOGO_BASE64 } from '../assets/logoBase64';
 
 export function CommunityIdCard({ member }) {
   const cardRef = useRef(null);
+  const logoCanvasRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
 
   // Calculate resolved photo URL
@@ -13,20 +14,54 @@ export function CommunityIdCard({ member }) {
       : `${import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '') : ''}${member.photo_url}`
     : null;
 
+  // Draw logo onto native canvas to ensure 100% reliable export across all browsers and html2canvas
+  useEffect(() => {
+    let active = true;
+    const img = new Image();
+    img.onload = () => {
+      if (!active) return;
+      const canvas = logoCanvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Draw crisp logo with high quality
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      }
+    };
+    img.src = LOGO_BASE64;
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const handleDownload = async () => {
     if (!cardRef.current) return;
     try {
       setDownloading(true);
 
-      // Give 50ms for any pending paints
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      // Brief delay to ensure render tree has completed any pending paints
+      await new Promise((resolve) => setTimeout(resolve, 80));
 
       const canvas = await html2canvas(cardRef.current, {
-        scale: 3, // Crisp high-definition output
+        scale: 3, // Crisp 3x ultra-high-definition output
         backgroundColor: '#141922',
         useCORS: true,
         allowTaint: true,
         logging: false,
+        onclone: (clonedDoc) => {
+          // Explicitly sync the logo canvas pixel data into the cloned DOM
+          const originalLogoCanvas = logoCanvasRef.current;
+          const clonedLogoCanvas = clonedDoc.querySelector('.yeh-logo-canvas');
+          if (originalLogoCanvas && clonedLogoCanvas) {
+            const clonedCtx = clonedLogoCanvas.getContext('2d');
+            clonedCtx.imageSmoothingEnabled = true;
+            clonedCtx.imageSmoothingQuality = 'high';
+            clonedCtx.drawImage(originalLogoCanvas, 0, 0);
+          }
+        },
       });
       
       const link = document.createElement('a');
@@ -62,21 +97,25 @@ export function CommunityIdCard({ member }) {
       >
         {/* Header with Logo + Organization Typography */}
         <div style={{ padding: '24px 20px 16px', textAlign: 'center', zIndex: 1, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-          {/* Logo Frame */}
+          {/* Logo Frame with Native Canvas */}
           <div style={{ 
             backgroundColor: '#ffffff', 
             borderRadius: '12px', 
-            padding: '6px', 
+            padding: '5px', 
             display: 'inline-flex', 
             alignItems: 'center', 
             justifyContent: 'center', 
             boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
-            marginBottom: '10px' 
+            marginBottom: '10px',
+            width: '84px',
+            height: '84px'
           }}>
-            <img 
-              src={LOGO_BASE64} 
-              alt="Youth Empowerment Hub Logo" 
-              style={{ width: '68px', height: '68px', objectFit: 'contain', display: 'block' }} 
+            <canvas 
+              ref={logoCanvasRef} 
+              className="yeh-logo-canvas"
+              width={160} 
+              height={160} 
+              style={{ width: '74px', height: '74px', display: 'block', borderRadius: '8px' }} 
             />
           </div>
 
@@ -84,7 +123,7 @@ export function CommunityIdCard({ member }) {
             Official ID Card
           </div>
 
-          {/* Organization Name matching logo color scheme (Youth = Blue, Empowerment Hub = Orange) */}
+          {/* Organization Name matching exact logo colors: Youth (Blue #0284c7), Empowerment Hub (Orange #ea580c) */}
           <div style={{ 
             margin: '6px 0 0', 
             fontSize: '1.22rem', 
