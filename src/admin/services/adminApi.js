@@ -149,7 +149,12 @@ export const eventsApi = createCrudApi('events');
 export const announcementsApi = createCrudApi('announcements');
 export const testimonialsApi = createCrudApi('testimonials');
 export const faqsApi = createCrudApi('faqs');
-export const applicationsApi = createCrudApi('applications');
+export const applicationsApi = {
+  ...createCrudApi('applications'),
+  getSources: () => request('/applications/sources/list'),
+  syncSheet: (data) => request('/applications/sync-sheet', { method: 'POST', body: data }),
+  syncAll: () => request('/applications/sync-all', { method: 'POST' }),
+};
 export const campusAmbassadorApi = createCrudApi('campus-ambassador');
 
 // Settings

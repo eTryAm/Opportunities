@@ -35,6 +35,7 @@ router.put(
   [
     optionalString('label'),
     optionalUrl('url'),
+    optionalUrl('sheet_url'),
     optionalBool('enabled'),
     handleValidation,
   ],
@@ -44,21 +45,26 @@ router.put(
       const existing = await db.get('SELECT * FROM form_links WHERE id = ?', [req.params.id]);
       if (!existing) return res.status(404).json({ error: 'Form link not found.' });
 
-      const { label, url, enabled } = req.body;
+      const { label, url, sheet_url, enabled } = req.body;
       if (url && !isValidHttpsUrl(url)) {
         return res.status(400).json({ error: 'URL must use HTTPS or be "#" placeholder.' });
+      }
+      if (sheet_url && !isValidHttpsUrl(sheet_url) && sheet_url !== '') {
+        return res.status(400).json({ error: 'Sheet URL must be a valid HTTPS URL.' });
       }
 
       await db.run(`
         UPDATE form_links SET
           label = COALESCE(?, label),
           url = COALESCE(?, url),
+          sheet_url = COALESCE(?, sheet_url),
           enabled = COALESCE(?, enabled),
           updated_at = datetime('now')
         WHERE id = ?
       `, [
         label != null ? sanitizeText(label) : null,
         url ?? null,
+        sheet_url !== undefined ? (sheet_url ? sheet_url.trim() : null) : null,
         enabled != null ? boolToInt(enabled) : null,
         req.params.id
       ]);

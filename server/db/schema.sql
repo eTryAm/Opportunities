@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS form_links (
   key TEXT NOT NULL UNIQUE,
   label TEXT NOT NULL,
   url TEXT NOT NULL DEFAULT '#',
+  sheet_url TEXT,
   enabled INTEGER NOT NULL DEFAULT 1,
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

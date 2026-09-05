@@ -117,6 +117,13 @@ export async function initDatabase() {
       await db.exec(schema);
     }
 
+    // Add sheet_url to form_links if upgrading from older schema
+    try {
+      await db.run('ALTER TABLE form_links ADD COLUMN sheet_url TEXT');
+    } catch {
+      // Column already exists
+    }
+
     // Check if initial admin seeding is needed
     const adminCheck = await db.get('SELECT COUNT(*) as count FROM admins');
     if (!adminCheck || adminCheck.count === 0) {
